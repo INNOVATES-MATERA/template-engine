@@ -2,11 +2,6 @@ specVersion: "4.0"
 type: library
 metadata:
   name: tplengine
-framework:
-  name: SAPUI5
-  version: "1.148.0"
-  libraries:
-    - name: sap.ui.core
 resources:
   configuration:
     paths:

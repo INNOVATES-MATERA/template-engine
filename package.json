@@ -13,6 +13,7 @@
     "build": "ui5 build --clean-dest --dest dist",
     "ts-typecheck": "tsc --noEmit",
     "prebuild": "npm run ts-typecheck",
-    "start": "ui5 serve"
+    "start": "ui5 serve",
+    "prepare": "npm run build"
   }
 }
