@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "es2022",
+    "skipLibCheck": true,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "moduleResolution": "node",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "paths": { "tplengine/*": ["./src/tplengine/*"] },
+    "typeRoots": ["./node_modules/@types", "./node_modules/@sapui5/types"]
+  },
+  "include": ["./src/**/*"]
+}

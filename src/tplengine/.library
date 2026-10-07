@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<library xmlns="http://www.sap.com/sap.ui.library.json">
+	<name>tplengine</name>
+	<vendor>Innovates</vendor>
+	<version>${version}</version>
+	<copyright></copyright>
+	<title>Motore dei template HTML con export PDF e Word</title>
+	<documentation>Segnaposto, elenchi ripetibili, export PDF/docx e storage dei template.</documentation>
+	<dependencies>
+		<dependency>
+			<libraryName>sap.ui.core</libraryName>
+		</dependency>
+	</dependencies>
+</library>

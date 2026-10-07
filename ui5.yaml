@@ -1,0 +1,25 @@
+specVersion: "4.0"
+type: library
+metadata:
+  name: tplengine
+framework:
+  name: SAPUI5
+  version: "1.148.0"
+  libraries:
+    - name: sap.ui.core
+resources:
+  configuration:
+    paths:
+      src: src
+      test: test
+server:
+  customMiddleware:
+    - name: ui5-tooling-transpile-middleware
+      afterMiddleware: compression
+builder:
+  customTasks:
+    - name: ui5-tooling-transpile-task
+      afterTask: replaceVersion
+  libraryPreload:
+    excludes:
+      - tplengine/thirdparty/
