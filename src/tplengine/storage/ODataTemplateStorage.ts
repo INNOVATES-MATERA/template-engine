@@ -50,7 +50,7 @@ export default class ODataTemplateStorage implements ITemplateStorage {
     return ODataTemplateStorage._toTemplate(oBinding.getBoundContext()?.getObject());
   }
 
-  public async saveTemplate(sAppCode: string, sName: string, sHtml: string): Promise<TplTemplate> {
+  public async saveTemplate(sAppCode: string, sName: string, sHtml: string, bIsDefault = true): Promise<TplTemplate> {
     const sAppId = await this._getAppId(sAppCode);
     // l'azione aggiunge una versione al template di default: ne indico l'id se esiste già
     const oCurrent = await this.getDefaultTemplate(sAppCode);
@@ -60,7 +60,7 @@ export default class ODataTemplateStorage implements ITemplateStorage {
     if (oCurrent) oBinding.setParameter("templateId", oCurrent.templateId);
     oBinding.setParameter("name", sName);
     oBinding.setParameter("htmlBody", sHtml);
-    oBinding.setParameter("isDefault", true);
+    oBinding.setParameter("isDefault", bIsDefault);
     await oBinding.execute();
 
     const oSaved = ODataTemplateStorage._toTemplate(oBinding.getBoundContext()?.getObject());

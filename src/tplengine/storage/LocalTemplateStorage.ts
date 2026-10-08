@@ -36,7 +36,7 @@ export default class LocalTemplateStorage implements ITemplateStorage {
     return Promise.resolve(this._latestDefault(this._readAll(), sAppCode));
   }
 
-  public saveTemplate(sAppCode: string, sName: string, sHtml: string): Promise<TplTemplate> {
+  public saveTemplate(sAppCode: string, sName: string, sHtml: string, bIsDefault = true): Promise<TplTemplate> {
     const aAll = this._readAll();
     const oCurrent = this._latestDefault(aAll, sAppCode);
     const oNew: TplTemplate = {
@@ -45,7 +45,7 @@ export default class LocalTemplateStorage implements ITemplateStorage {
       version: (oCurrent?.version ?? 0) + 1,
       name: sName,
       htmlBody: sHtml,
-      isDefault: true,
+      isDefault: bIsDefault,
     };
     return this._writeAll([...aAll, oNew]) ?
         Promise.resolve(oNew)

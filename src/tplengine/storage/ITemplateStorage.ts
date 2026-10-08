@@ -14,5 +14,5 @@ export default interface ITemplateStorage {
   getDefaultTemplate(sAppCode: string): Promise<TplTemplate | undefined>;
 
   /** Salva una nuova versione del template e la restituisce; se il salvataggio non riesce la promise viene rifiutata. */
-  saveTemplate(sAppCode: string, sName: string, sHtml: string): Promise<TplTemplate>;
+  saveTemplate(sAppCode: string, sName: string, sHtml: string, bIsDefault?: boolean): Promise<TplTemplate>;
 }
