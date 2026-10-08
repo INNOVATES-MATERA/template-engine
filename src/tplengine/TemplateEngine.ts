@@ -28,6 +28,12 @@ export default class TemplateEngine {
     /** Dati di esempio per l'anteprima, ricavati dai sampleValue del catalogo. */
     private _sampleData: Record<string, unknown> = {};
 
+    /**
+     * Impara i campi e gli elenchi dell'app dal catalogo (gruppi e campi letti dallo storage) e ne ricava i dati d'esempio.
+     * Gruppo di campi singoli: chiavi dei campi e relativo sampleValue. Gruppo elenco: un array di righe, ricavato dai sampleValue
+     * delle colonne (un valore per riga, separati da ";"), e l'elenco con le chiavi delle sue colonne.
+     * Va chiamato prima di render.
+     */
     public setCatalog(oCatalog: TplCatalog): void {
         const oSample: Record<string, unknown> = {};
         const aKeys: string[] = [];
@@ -61,10 +67,12 @@ export default class TemplateEngine {
         return this._lists;
     }
 
+    /** Dati d'esempio per l'anteprima: i campi singoli e, per ogni elenco, l'array delle sue righe. */
     public getSampleData(): Record<string, unknown> {
         return this._sampleData;
     }
 
+    /** Sostituisce &, < e > con le entità HTML, così un valore non può inserire HTML nel documento. */
     private static _escape(s: string): string {
         return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
@@ -75,6 +83,11 @@ export default class TemplateEngine {
         return TemplateEngine._escape(String(v));
     }
 
+    /**
+     * Sostituisce ogni {{chiave}} con il valore corrispondente nei dati. Le chiavi non presenti in aKeys vengono segnalate
+     * in rosso come [chiave?]; con bKeepUnknown restano invariate, per le righe e i blocchi ripetuti dove i campi
+     * dell'elenco non sono tra i campi singoli e si risolvono passando le chiavi delle sue colonne.
+     */
     private _fillPlaceholders(sHtml: string, oData: Record<string, unknown>, aKeys: string[], bKeepUnknown = false): string {
         return sHtml.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (sMatch, sKey: string) => {
             const bKnown = aKeys.includes(sKey);
@@ -86,10 +99,12 @@ export default class TemplateEngine {
 
     // ── Ripetizione di righe e blocchi ───────────────────────────────────────────────
 
+    /** Elenco ripetibile con quella chiave; undefined se il catalogo non lo contiene. */
     private _findList(sKey: string): TemplateList | undefined {
         return this._lists.find((l) => l.key === sKey);
     }
 
+    /** Etichetta rossa [elenco chiave?] che prende il posto di una ripetizione su un elenco inesistente. */
     private _unknownList(sKey: string): HTMLElement {
         const oSpan = document.createElement("span");
         oSpan.setAttribute("style", "color:#b00020");
@@ -97,7 +112,11 @@ export default class TemplateEngine {
         return oSpan;
     }
 
-    /** Blocchi: dal paragrafo "{{#each elenco}}" a quello "{{/each}}" i blocchi in mezzo si ripetono per ogni elemento. */
+    /**
+     * Blocchi: dal paragrafo "{{#each elenco}}" a quello "{{/each}}" i blocchi in mezzo si ripetono per ogni elemento.
+     * Senza paragrafo di chiusura il testo resta com'è e viene segnalato in rosso a fine rendering; con un elenco sconosciuto
+     * i blocchi sono sostituiti dall'etichetta rossa.
+     */
     private _expandBlocks(oRoot: HTMLElement, oData: Record<string, unknown>): void {
         Array.from(oRoot.querySelectorAll("p,div,h1,h2,h3,h4,h5,h6")).forEach((oStart) => {
             if (!oRoot.contains(oStart)) return;
@@ -132,7 +151,10 @@ export default class TemplateEngine {
         });
     }
 
-    /** Righe: ogni riga di tabella che contiene "{{#each elenco}}" viene ripetuta per ogni elemento. */
+    /**
+     * Righe: ogni riga di tabella che contiene "{{#each elenco}}" viene ripetuta per ogni elemento, senza il marcatore.
+     * Con un elenco sconosciuto la riga diventa una sola cella con l'etichetta rossa.
+     */
     private _expandRows(oRoot: HTMLElement, oData: Record<string, unknown>): void {
         Array.from(oRoot.querySelectorAll("tr")).forEach((oRow) => {
             const aMatch = RE_OPEN.exec(oRow.textContent ?? "");
@@ -160,8 +182,10 @@ export default class TemplateEngine {
     // ── Rendering ────────────────────────────────────────────────────────────────────
 
     /**
-     * Sostituisce i segnaposto nel template HTML e applica lo stile uniforme alle tabelle
-     * .
+     * Produce l'HTML finale del documento a partire dal template e dai dati (valori già formattati: campi singoli e array per gli elenchi).
+     * Espande blocchi e righe ripetute, converte i salti pagina, applica lo stile uniforme a tabelle, titoli e paragrafi
+     * (lo stile scelto nell'editor prevale), sostituisce i {{campo}} e segnala in rosso ciò che non torna:
+     * campi o elenchi sconosciuti e ripetizioni senza chiusura. Il risultato va a PdfExporter e DocxExporter.
      */
     public render(sTemplateHtml: string, oData: Record<string, unknown>): string {
         const oRoot = document.createElement("div");

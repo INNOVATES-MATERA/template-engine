@@ -186,7 +186,7 @@ export default class DocxExporter {
     }
   }
 
-  private static _blocks(st: State, oParent: HTMLElement, ctx: Ctx, flow: { pageBreak: boolean; mark?: any }): any[] {
+  private static _blocks(st: State, oParent: HTMLElement, ctx: Ctx, flow: { pageBreak: boolean; mark?: any; top?: number }): any[] {
     const d = st.d;
     const aOut: ({ p: any } | { t: any; mt: number })[] = [];
     let aItems: Item[] = [];
@@ -194,6 +194,8 @@ export default class DocxExporter {
     let nGap = 0; // margine inferiore dell'ultima tabella (Word non ha spazio dopo le tabelle)
 
     const fnPush = (opts: any, nMt: number, nMb: number): void => {
+      nMt = Math.max(nMt, flow.top ?? 0);
+      flow.top = 0;
       const nBefore = Math.max(Math.max(nMt, nGap) - nLastAfter, 0);
       aOut.push({ p: { ...opts, spacing: { before: nBefore, after: nMb, ...(opts.spacing ?? {}) } } });
       nLastAfter = nMb;
@@ -270,9 +272,15 @@ export default class DocxExporter {
           fnPush({ children: [new d.PageBreak()] }, 0, 0);
           flow.pageBreak = false;
         }
+        const nTop = Math.max(nMt, flow.top ?? 0);
+        flow.top = 0;
         const last = aOut[aOut.length - 1] as any;
-        if (last?.p && nMt) last.p.spacing.after = Math.max(last.p.spacing.after, nMt);
-        aOut.push({ t: DocxExporter._table(st, el as HTMLTableElement, c), mt: nMt });
+        if (last?.p && nTop) last.p.spacing.after = Math.max(last.p.spacing.after, nTop);
+        if (last?.t) {
+          // due tabelle una dopo l'altra: il Word le unirebbe, quindi si inserisce un paragrafo minuscolo che porta il margine
+          aOut.push({ p: { children: [], run: { size: 2 }, spacing: { before: 0, after: Math.max(nGap, nTop), line: 20, lineRule: "exact" } } } as any);
+        }
+        aOut.push({ t: DocxExporter._table(st, el as HTMLTableElement, c), mt: nTop });
         nLastAfter = 0;
         nGap = nMb;
       } else if (t === "UL" || t === "OL") {
@@ -298,7 +306,22 @@ export default class DocxExporter {
         }
       } else {
         // DIV e simili: contenitore
+        const bHasBlocks = Array.from(el.children).some((x) => BLOCK_TAGS.has(x.tagName));
+        if (t === "DIV" && !bHasBlocks) {
+          // solo testo: un paragrafo, così il Word rispetta i margini del div come il PDF
+          const aIt: Item[] = [];
+          DocxExporter._collect(el, c, aIt);
+          fnPara(aIt, c, nMt, nMb, false);
+          return;
+        }
+        if (s.display === "flex" && /flex-end|^end$|right/.test(s.justifyContent)) {
+          // riga flex allineata a destra con figlio di larghezza fissa: il Word non ha il flex, si usa un rientro a sinistra
+          const nW = DocxExporter._len((el.firstElementChild as HTMLElement | null)?.style.width ?? "");
+          if (nW) c.indent = (c.indent ?? 0) + Math.max(TEXT_W - nW * TWIPS_PER_PX, 0);
+        }
+        flow.top = Math.max(flow.top ?? 0, nMt);
         const aSub = DocxExporter._blocks(st, el, c, flow);
+        flow.top = 0;
         aSub.forEach((x) => aOut.push({ p: undefined, raw: x } as any));
         if (aSub.length) nLastAfter = 0;
       }
